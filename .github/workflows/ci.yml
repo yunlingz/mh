@@ -33,7 +33,7 @@ jobs:
       run:
         shell: ${{ matrix.shell }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install Linux static-libc prerequisites
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --yes musl-tools
@@ -67,7 +67,7 @@ jobs:
       - name: Focused native shell executor tests
         run: cargo test --locked --test core_tools bash_
       - name: Run Clippy
-        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+        run: python .github/scripts/check_clippy.py
       - name: Run all tests
         run: cargo test --locked --all-targets
       - name: Build native release
@@ -142,7 +142,7 @@ jobs:
           Compress-Archive -Path package\* -DestinationPath (Join-Path dist $archive)
           $hash = (Get-FileHash (Join-Path dist $archive) -Algorithm SHA256).Hash.ToLowerInvariant()
           [IO.File]::WriteAllText((Join-Path $PWD "dist\$archive.sha256"), "$hash  $archive`n", [Text.UTF8Encoding]::new($false))
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: mh-${{ matrix.platform }}
           path: dist/*
@@ -157,7 +157,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           pattern: mh-*
           merge-multiple: true

@@ -211,10 +211,10 @@ async fn image_bytes(
         if metadata.len() > IMAGE_BYTES {
             return Err("Clipboard image exceeds the processing limit".into());
         }
-        return tokio::fs::read(file)
+        tokio::fs::read(file)
             .await
             .map(Some)
-            .map_err(|_| "Cannot read clipboard image".into());
+            .map_err(|_| "Cannot read clipboard image".into())
     }
     #[cfg(not(target_os = "macos"))]
     let _ = scratch;
