@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "Api": {
+      "enum": [
+        "openai-responses-sse"
+      ],
+      "type": "string"
+    },
+    "CompactionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "keepRecentTokens": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "reserveTokens": {
+          "format": "uint64",
+          "minimum": 1.0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "keepRecentTokens",
+        "reserveTokens"
+      ],
+      "type": "object"
+    },
+    "EnvironmentVariableName": {
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "type": "string"
+    },
+    "InputModality": {
+      "enum": [
+        "text",
+        "image"
+      ],
+      "type": "string"
+    },
+    "ModelConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "alias": {
+          "description": "Unique within the provider. Omission retains the wire ID as the local name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "compaction": {
+          "$ref": "#/definitions/CompactionConfig"
+        },
+        "contextWindow": {
+          "format": "uint64",
+          "minimum": 1.0,
+          "type": "integer"
+        },
+        "id": {
+          "description": "Provider wire ID; never replaced by the local selection alias.",
+          "type": "string"
+        },
+        "input": {
+          "default": [
+            "text"
+          ],
+          "items": {
+            "$ref": "#/definitions/InputModality"
+          },
+          "type": "array"
+        },
+        "maxTokens": {
+          "format": "uint64",
+          "minimum": 16.0,
+          "type": "integer"
+        },
+        "reasoning": {
+          "default": false,
+          "type": "boolean"
+        },
+        "reasoningEffort": {
+          "description": "Fixed provider reasoning effort. Null or omission uses the provider default; an explicit \"none\" effort remains distinct from that default.",
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "compaction",
+        "contextWindow",
+        "id",
+        "maxTokens"
+      ],
+      "type": "object"
+    },
+    "ProviderConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "api": {
+          "$ref": "#/definitions/Api"
+        },
+        "api_key_env": {
+          "$ref": "#/definitions/EnvironmentVariableName"
+        },
+        "base_url_env": {
+          "$ref": "#/definitions/EnvironmentVariableName"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/definitions/ModelConfig"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "api",
+        "api_key_env",
+        "base_url_env",
+        "models"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "defaultModel": {
+      "type": "string"
+    },
+    "providers": {
+      "additionalProperties": {
+        "$ref": "#/definitions/ProviderConfig"
+      },
+      "type": "object"
+    },
+    "theme": {
+      "default": "ci-dark",
+      "type": "string"
+    }
+  },
+  "required": [
+    "defaultModel",
+    "providers"
+  ],
+  "title": "Config",
+  "type": "object"
+}

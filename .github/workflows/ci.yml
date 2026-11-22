@@ -1,0 +1,180 @@
+name: check-build-release
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-build:
+    name: ${{ matrix.platform }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+            target: x86_64-unknown-linux-musl
+            shell: bash
+          - os: windows-2025
+            platform: windows-msvc-x64
+            target: x86_64-pc-windows-msvc
+            shell: pwsh
+          - os: macos-15
+            platform: macos-arm64
+            target: aarch64-apple-darwin
+            shell: bash
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install Linux static-libc prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes musl-tools
+      - name: Select native Windows MSVC host
+        if: runner.os == 'Windows'
+        run: rustup set default-host x86_64-pc-windows-msvc
+      - name: Install native Rust toolchain and distribution target
+        run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy --target ${{ matrix.target }}
+      - name: Verify native Windows host and PowerShell
+        if: runner.os == 'Windows'
+        run: |
+          if (-not (rustc -vV | Select-String '^host: x86_64-pc-windows-msvc$')) {
+            throw 'Native Windows verification requires the MSVC host.'
+          }
+          $PSVersionTable.PSVersion
+          Get-Command pwsh.exe
+      - name: Verify native macOS arm64 host
+        if: runner.os == 'macOS'
+        run: |
+          test "$(uname -m)" = arm64 && rustc -vV | grep '^host: aarch64-apple-darwin$'
+      - name: Check version tag matches the Cargo package
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python -c 'import os,tomllib; v=tomllib.load(open("Cargo.toml","rb"))["package"]["version"]; assert os.environ["RELEASE_TAG"] == "v"+v, "Release tag must match Cargo.toml version"'
+      - name: Check formatting
+        run: cargo fmt --check
+      - name: Focused native shell tests
+        run: cargo test --locked --lib tools::shell::tests
+      - name: Focused native shell executor tests
+        run: cargo test --locked --test core_tools bash_
+      - name: Run Clippy
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - name: Run all tests
+        run: cargo test --locked --all-targets
+      - name: Build native release
+        run: cargo build --release --locked
+      - name: Check generated schemas
+        run: cargo run --locked --example generate_schemas -- --check
+      - name: Build static Linux distribution
+        if: runner.os == 'Linux'
+        run: cargo build --release --locked --target x86_64-unknown-linux-musl
+      - name: Build static-CRT Windows distribution
+        if: runner.os == 'Windows'
+        env:
+          CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: -C target-feature=+crt-static
+        # Explicit target keeps static-CRT flags away from host proc-macros.
+        run: cargo build --release --locked --target x86_64-pc-windows-msvc
+      - name: Build macOS arm64 distribution
+        if: runner.os == 'macOS'
+        run: cargo build --release --locked --target aarch64-apple-darwin
+      - name: Validate and package Unix distribution
+        if: runner.os != 'Windows'
+        env:
+          TARGET: ${{ matrix.target }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          binary="target/$TARGET/release/mh"
+          "$binary" --version
+          "$binary" --help
+          if [ "$PLATFORM" = linux-x64 ]; then
+            file "$binary" | grep 'x86-64'
+            if readelf -l "$binary" | grep -q INTERP; then
+              printf 'Linux executable must not require a dynamic loader\n' >&2; exit 1
+            fi
+            if readelf -d "$binary" | grep -q NEEDED; then
+              printf 'Linux executable must not require shared libraries\n' >&2; exit 1
+            fi
+          else
+            file "$binary" | grep 'arm64'
+            otool -L "$binary" | tail -n +2 | while read -r library rest; do
+              case "$library" in /usr/lib/*|/System/Library/*) ;; *) printf 'Unexpected non-OS runtime dependency\n' >&2; exit 1;; esac
+            done
+          fi
+          mkdir -p package dist
+          cp "$binary" LICENSE README.md package/
+          archive="mh-$PLATFORM.tar.gz"
+          tar -czf "dist/$archive" -C package mh LICENSE README.md
+          (cd dist && if command -v sha256sum >/dev/null; then sha256sum "$archive"; else shasum -a 256 "$archive"; fi) > "dist/$archive.sha256"
+      - name: Validate and package Windows distribution
+        if: runner.os == 'Windows'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $binary = 'target\x86_64-pc-windows-msvc\release\mh.exe'
+          & $binary --version
+          if ($LASTEXITCODE -ne 0) { throw 'Distribution executable failed' }
+          & $binary --help
+          if ($LASTEXITCODE -ne 0) { throw 'Distribution help failed' }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $installation = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ($LASTEXITCODE -ne 0 -or !$installation) { throw 'MSVC inspection tools missing' }
+          $tools = Get-ChildItem (Join-Path $installation 'VC\Tools\MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $dumpbin = Join-Path $tools.FullName 'bin\Hostx64\x64\dumpbin.exe'
+          $imports = & $dumpbin /dependents $binary
+          if ($LASTEXITCODE -ne 0) { throw 'PE dependency inspection failed' }
+          if ($imports -match '(?i)(vcruntime|msvcp|ucrtbase|api-ms-win-crt)[^\s]*\.dll') {
+            throw 'Distribution must use a static C/C++ runtime'
+          }
+          $headers = & $dumpbin /headers $binary
+          if ($LASTEXITCODE -ne 0 -or -not ($headers -match '8664 machine')) { throw 'Distribution must be x64' }
+          New-Item -ItemType Directory package,dist | Out-Null
+          Copy-Item $binary,LICENSE,README.md package
+          $archive = 'mh-windows-msvc-x64.zip'
+          Compress-Archive -Path package\* -DestinationPath (Join-Path dist $archive)
+          $hash = (Get-FileHash (Join-Path dist $archive) -Algorithm SHA256).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText((Join-Path $PWD "dist\$archive.sha256"), "$hash  $archive`n", [Text.UTF8Encoding]::new($false))
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mh-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish version-tag binaries
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    needs: check-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: mh-*
+          merge-multiple: true
+          path: dist
+      - name: Verify checksums and publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum --check ./*.sha256)
+          test "$(find dist -maxdepth 1 -name '*.sha256' | wc -l)" -eq 3
+          # Existing release assets are never overwritten; use a new version tag.
+          gh release create "$RELEASE_TAG" dist/* --verify-tag --title "$RELEASE_TAG" --generate-notes
+
+# Hosted Ubuntu is native Linux, not WSL. A configured matrix is not evidence
+# until its jobs have actually passed on the named native architectures.
+# Self-contained means no extra language/C runtime: OS libraries, a terminal,
+# native shell and optional OS clipboard helpers remain platform prerequisites.

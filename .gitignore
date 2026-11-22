@@ -1,0 +1,16 @@
+/target/
+/.verification-home/
+/.mh/config/
+/.mh/sessions/
+/.claude/settings.local.json
+/config.json
+/theme.json
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+*.log
+__pycache__/
+.DS_Store
+Thumbs.db

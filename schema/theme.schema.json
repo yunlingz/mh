@@ -1,0 +1,377 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "ColorValue": {
+      "anyOf": [
+        {
+          "format": "uint8",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        {
+          "$ref": "#/definitions/HexColor"
+        }
+      ]
+    },
+    "HexColor": {
+      "pattern": "^(#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6})?$",
+      "type": "string"
+    },
+    "PaletteOverrides": {
+      "additionalProperties": false,
+      "properties": {
+        "accent": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "background": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bashMode": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "border": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "borderAccent": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dim": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mdCode": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mdHeading": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "muted": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selectedBg": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "success": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "text": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingHigh": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingLow": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingMax": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingMedium": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingMinimal": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingOff": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingText": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "thinkingXhigh": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolDiffAdded": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolDiffContext": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolDiffRemoved": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolErrorBg": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolOutput": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolPendingBg": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolSuccessBg": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolTitle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "userMessageBg": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "userMessageText": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "warning": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ColorValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "ThemeDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "colors": {
+          "$ref": "#/definitions/PaletteOverrides"
+        }
+      },
+      "required": [
+        "colors"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "themes": {
+      "additionalProperties": {
+        "$ref": "#/definitions/ThemeDefinition"
+      },
+      "default": {},
+      "type": "object"
+    }
+  },
+  "title": "ThemeFile",
+  "type": "object"
+}

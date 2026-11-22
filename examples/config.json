@@ -1,0 +1,39 @@
+{
+  "$schema": "../schema/config.schema.json",
+  "defaultModel": "work/deep",
+  "providers": {
+    "work": {
+      "api": "openai-responses-sse",
+      "base_url_env": "MH_BASE_URL",
+      "api_key_env": "MH_API_KEY",
+      "models": [
+        {
+          "id": "your-model-id",
+          "alias": "deep",
+          "input": ["text", "image"],
+          "reasoning": true,
+          "reasoningEffort": "high",
+          "contextWindow": 128000,
+          "maxTokens": 16384,
+          "compaction": {
+            "reserveTokens": 16384,
+            "keepRecentTokens": 20000
+          }
+        },
+        {
+          "id": "your-model-id",
+          "alias": "fast",
+          "input": ["text", "image"],
+          "reasoning": true,
+          "reasoningEffort": "low",
+          "contextWindow": 128000,
+          "maxTokens": 16384,
+          "compaction": {
+            "reserveTokens": 16384,
+            "keepRecentTokens": 20000
+          }
+        }
+      ]
+    }
+  }
+}
