@@ -144,7 +144,9 @@ pub async fn execute(
                 cleanup = Some(tokio::time::Instant::now() + Duration::from_secs(2));
             }
             _ = wait_deadline(cleanup), if failure.is_some() => break,
-            _ = wait_deadline(idle), if status.is_some() => break,
+            // An explicit timeout covers inherited pipes too. The no-timeout
+            // idle grace must not turn a still-running descendant into success.
+            _ = wait_deadline(idle), if status.is_some() && deadline.is_none() && failure.is_none() => break,
             result = child.child.inner_mut().wait(), if status.is_none() => {
                 status = Some(result.map_err(|_| "Cannot wait for the shell")?);
                 shell_exited_after = Some(started.elapsed());

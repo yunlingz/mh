@@ -478,7 +478,11 @@ fn descendant_command(wait: bool) -> String {
 
 #[tokio::test]
 async fn bash_timeout_kills_the_process_group_or_job() {
-    for (id, wait) in [("timeout", true), ("pipe-timeout", false)] {
+    for (id, wait, mode) in [
+        ("timeout", true, "descendant"),
+        ("pipe-timeout", false, "descendant"),
+        ("quiet-pipe-timeout", false, "quiet-descendant"),
+    ] {
         let (temp, tools) = fixture();
         let timeout = if cfg!(windows) { 2.0 } else { 0.2 };
         let call = ToolCall {
@@ -489,10 +493,10 @@ async fn bash_timeout_kills_the_process_group_or_job() {
         let result = tools
             .execute(
                 &call,
-                &fixture_execution(id, CancellationToken::new(), &temp, "descendant"),
+                &fixture_execution(id, CancellationToken::new(), &temp, mode),
             )
             .await;
-        assert!(result.is_error, "{}", result.plain_text());
+        assert!(result.is_error, "{id}: {}", result.plain_text());
         // Prove a descendant actually started; timing out during shell startup
         // alone would not exercise process-tree termination.
         assert!(

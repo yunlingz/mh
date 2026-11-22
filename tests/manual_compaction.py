@@ -64,7 +64,7 @@ try:
             if number:
                 command.append('--continue')
             command.append('AUTO_USER_' + str(number) + ' ' + 'fixture input ' * 220)
-            result = subprocess.run(command, cwd=cwd, env=env, capture_output=True, timeout=15)
+            result = subprocess.run(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL, capture_output=True, timeout=15)
             assert result.returncode == 0, result.stderr.decode(errors='replace')
             assert b'AUTO_MAIN_ANSWER' in result.stdout
         assert not errors

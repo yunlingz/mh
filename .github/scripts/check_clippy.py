@@ -8,6 +8,8 @@ result = subprocess.run(
      '--message-format=json', '--', '-D', 'warnings'],
     stdout=subprocess.PIPE,
     text=True,
+    encoding='utf-8',
+    errors='replace',
     check=False,
 )
 for line in result.stdout.splitlines():

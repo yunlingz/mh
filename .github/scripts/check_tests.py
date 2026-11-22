@@ -5,7 +5,7 @@ import sys
 
 result = subprocess.run(['cargo', 'test', '--locked', *sys.argv[1:]],
                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                        text=True, check=False)
+                        text=True, encoding='utf-8', errors='replace', check=False)
 print(result.stdout, end='')
 if result.returncode:
     failures = re.findall(r"---- (.+?) stdout ----\n(.*?)(?=\n---- |\n\nfailures:|\Z)",
