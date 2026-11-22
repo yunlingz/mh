@@ -63,13 +63,13 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
       - name: Focused native shell tests
-        run: cargo test --locked --lib tools::shell::tests
+        run: python .github/scripts/check_tests.py --lib tools::shell::tests
       - name: Focused native shell executor tests
-        run: cargo test --locked --test core_tools bash_
+        run: python .github/scripts/check_tests.py --test core_tools bash_
       - name: Run Clippy
         run: python .github/scripts/check_clippy.py
       - name: Run all tests
-        run: cargo test --locked --all-targets
+        run: python .github/scripts/check_tests.py --all-targets
       - name: Build native release
         run: cargo build --release --locked
       - name: Check generated schemas
