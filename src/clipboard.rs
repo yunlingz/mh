@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration;
 
+#[cfg(not(target_os = "macos"))]
 use base64::{Engine, engine::general_purpose::STANDARD};
 use process_wrap::tokio::{CommandWrap, KillOnDrop};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};

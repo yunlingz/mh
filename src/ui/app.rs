@@ -1310,7 +1310,11 @@ impl App {
                             && menu.prefix.trim_end() == value.trim_end();
                         let submit =
                             key.code == KeyCode::Enter && (menu.command || exact_command_argument);
-                        self.editor.complete(count, &value)?;
+                        if let Err(error) = self.editor.complete(count, &value) {
+                            self.status = error;
+                            self.dirty = true;
+                            return Ok(());
+                        }
                         self.completion = None;
                         if submit {
                             self.submit().await?;
@@ -2930,6 +2934,30 @@ mod tests {
                 .iter()
                 .any(|line| line.to_string().contains("new prompt"))
         );
+    }
+
+    #[tokio::test]
+    async fn rejected_completion_keeps_the_app_open_and_the_original_draft() {
+        let (_temp, mut app) = fixture().await;
+        let original = "x".repeat(usize::from(u16::MAX) - 1);
+        app.editor.insert_text(&original).unwrap();
+        app.completion = Some(crate::ui::completion::Menu {
+            prefix: "x".into(),
+            selected: Some(0),
+            command: false,
+            items: vec![crate::ui::completion::Item {
+                value: "longer".into(),
+                label: "fixture".into(),
+                description: String::new(),
+            }],
+        });
+        app.key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE))
+            .await
+            .unwrap();
+        assert!(!app.quit && app.main.is_none());
+        assert_eq!(app.editor.draft().text(), original);
+        assert!(app.completion.is_some());
+        assert!(app.status.contains("too large"));
     }
 
     #[tokio::test]
